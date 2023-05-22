@@ -1,0 +1,3 @@
+[submodule "tiny-ECDH-c"]
+	path = tiny-ECDH-c
+	url = https://github.com/sudipghimire533/tiny-ECDH-c
