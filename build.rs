@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 const TINY_ECDH_HEADER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tiny-ECDH-c/ecdh.h");
 const TINY_ECDH_SRC: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tiny-ECDH-c/ecdh.c");
-const COMPILER: &str = "/usr/bin/clang";
 
 fn main() {
     let src = [TINY_ECDH_SRC];
@@ -12,8 +11,7 @@ fn main() {
     let build = builder
         .files(src.iter())
         .include(TINY_ECDH_HEADER)
-        .define("USE_ZLIB", None)
-        .compiler(COMPILER);
+        .define("USE_ZLIB", None);
     build.compile("tiny-ecdh");
 
     println!("cargo:rustc-link-lib=tiny-ecdh");
