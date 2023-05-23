@@ -36,8 +36,8 @@ impl Keypair {
         }
     }
 
-    pub fn generate_shared_key(&self, others: PublicKey) -> Option<Keypair> {
-        let mut shared_key = [0u8; 32];
+    pub fn generate_shared_key(&self, others: PublicKey) -> Option<PublicKey> {
+        let mut shared_key = [0u8; 64];
         let res = unsafe {
             ecdh_c::ecdh_shared_secret(
                 self.private.as_ptr(),
@@ -47,7 +47,7 @@ impl Keypair {
         };
 
         if res == 1 {
-            Self::new(shared_key)
+            Some(shared_key)
         } else {
             None
         }
@@ -93,53 +93,20 @@ mod tests {
 
     #[test]
     fn shared_secret() {
-        unsafe {
-            let alice = Keypair::new([0x01; 32]).unwrap();
-            let bob = Keypair::new([0x02; 32]).unwrap();
+        let alice = Keypair::new([0x01; 32]).unwrap();
+        let bob = Keypair::new([0x02; 32]).unwrap();
 
-            let mut alice_public = [0u8; 64];
-            let mut alice_private = alice.private().clone();
+        let alice_shared_key = alice.generate_shared_key(bob.public().clone()).unwrap();
+        let bob_shared_key = bob.generate_shared_key(alice.public().clone()).unwrap();
 
-            let alice_pub_ptr = alice_public.as_mut_ptr();
-            let alice_priv_ptr = alice_private.as_mut_ptr();
+        let expected_shared_key = [
+            0x57, 0x57, 0x3A, 0x81, 0xE2, 0x7E, 0x48, 0x26, 0xFA, 0x8E, 0x18, 0x70, 0xCD, 0x6B, 0x66, 0x40,
+		    0xF3, 0x90, 0x5D, 0x98, 0x40, 0xF4, 0x12, 0xFA, 0xAE, 0x74, 0x0B, 0x12, 0xE0, 0x01, 0x00, 0x00,
+	    	0xC4, 0xD8, 0x27, 0xA9, 0x37, 0x49, 0xEE, 0x44, 0xEA, 0x1B, 0xAC, 0x1C, 0x18, 0x8C, 0x03, 0xAA,
+		    0x6B, 0x02, 0xDA, 0x1C, 0x68, 0xE9, 0xE8, 0xE6, 0xCA, 0xB9, 0xD1, 0xED, 0x91, 0x01, 0x00, 0x00
+        ];
 
-            let success = super::ecdh_c::ecdh_generate_keys(alice_pub_ptr, alice_priv_ptr);
-            assert_eq!(
-                success, 1,
-                "ecdh_c::ecdh_generate_keys failed returned non-zero value for alice"
-            );
-
-            let mut bob_public = [0u8; 64];
-            let mut bob_private = bob.private().clone();
-
-            let bob_pub_ptr = bob_public.as_mut_ptr();
-            let bob_priv_ptr = bob_private.as_mut_ptr();
-
-            let success = super::ecdh_c::ecdh_generate_keys(bob_pub_ptr, bob_priv_ptr);
-            assert_eq!(
-                success, 1,
-                "ecdh_c::ecdh_generate_keys failed returned non-zero value for bob"
-            );
-
-            let mut alice_shared_key = [0u8; 64];
-            let mut bob_shared_key = [0u8; 64];
-            let alice_shared_key_ptr = alice_shared_key.as_mut_ptr();
-            let bob_shared_key_ptr = bob_shared_key.as_mut_ptr();
-
-            assert_eq!(
-                1,
-                super::ecdh_c::ecdh_shared_secret(
-                    alice_priv_ptr,
-                    bob_pub_ptr,
-                    alice_shared_key_ptr
-                )
-            );
-            assert_eq!(
-                1,
-                super::ecdh_c::ecdh_shared_secret(bob_priv_ptr, alice_pub_ptr, bob_shared_key_ptr)
-            );
-
-            assert_eq!(alice_shared_key, bob_shared_key);
-        }
+        assert_eq!(alice_shared_key, bob_shared_key);
+        assert_eq!(alice_shared_key, expected_shared_key);
     }
 }
