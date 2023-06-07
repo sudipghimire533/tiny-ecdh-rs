@@ -68,6 +68,15 @@ impl Keypair {
     }
 }
 
+impl TryFrom<PrivateKey> for Keypair {
+    type Error = &'static str;
+
+    fn try_from(value: PrivateKey) -> Result<Self, Self::Error> {
+        let pair = Self::new(value).ok_or("Cannot construct keypair")?;
+        Ok(pair)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,5 +128,10 @@ mod tests {
         let re_alice = Keypair::new(alice.private().clone()).unwrap();
 
         assert_eq!(alice, re_alice);
+    }
+
+    #[test]
+    fn try_from_array() {
+        let _alice: Keypair = [0x01; 32].try_into().unwrap();
     }
 }
