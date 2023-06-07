@@ -112,4 +112,12 @@ mod tests {
         assert_eq!(alice_shared_key, bob_shared_key);
         assert_eq!(alice_shared_key, expected_shared_key);
     }
+
+    #[test]
+    fn reconstruct() {
+        let alice = Keypair::new([0x01; 32]).unwrap();
+        let re_alice = Keypair::new(alice.private().clone()).unwrap();
+
+        assert_eq!(alice, re_alice);
+    }
 }
